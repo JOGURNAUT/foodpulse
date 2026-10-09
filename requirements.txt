@@ -1,0 +1,12 @@
+# The local path needs only these two.
+duckdb>=1.0
+pytest>=8.0
+
+# The Snowflake path. Not needed to run this project locally.
+# snowflake-connector-python>=3.0
+
+# dbt, if you want to run the models through dbt rather than
+# scripts/build_models.py. The models and tests are the same files either way.
+# dbt-core>=1.8
+# dbt-duckdb>=1.8
+# dbt-snowflake>=1.8
