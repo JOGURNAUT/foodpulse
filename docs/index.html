@@ -68,78 +68,78 @@
 <p class="eyebrow">FoodPulse · delivery SLA</p>
 <h1>A flat 45-minute promise breaks 37% of the time on
     biryani and 0.4% on desserts.</h1>
-<p class="stamp">Generated 2026-10-09 09:36 UTC from the duckdb warehouse ·
-   40,000 orders over 60 days · every figure queried at build time</p>
+<p class="stamp">Generated 2026-10-09 10:35 UTC from the duckdb warehouse ·
+   2,000,000 orders over 180 days · every figure queried at build time</p>
 
 <section>
   <h2>SLA breach rate by cuisine</h2>
   <p class="lede">The promise does not know what it promised. Kitchen time is a
      property of the dish &mdash; a biryani is cooked to order, a dessert is
      plated &mdash; and one flat threshold across all of them is wrong by
-     88&times; between the ends of this list.</p>
+     84&times; between the ends of this list.</p>
   
       <div class="row">
         <div class="rh"><span class="nm">Biryani</span>
-          <span class="rt">37.0%</span></div>
+          <span class="rt">37.1%</span></div>
         <div class="track"><div class="fill" style="width:100.0%;
              background:var(--slow)"></div></div>
-        <div class="sub">4,633 orders · avg 43.6 min · p90 55 min</div>
+        <div class="sub">235,536 orders · avg 43.6 min · p90 55 min</div>
       </div>
 
       <div class="row">
         <div class="rh"><span class="nm">North Indian</span>
-          <span class="rt">14.2%</span></div>
-        <div class="track"><div class="fill" style="width:38.4%;
+          <span class="rt">13.8%</span></div>
+        <div class="track"><div class="fill" style="width:37.1%;
              background:var(--slow)"></div></div>
-        <div class="sub">5,062 orders · avg 37.5 min · p90 48 min</div>
+        <div class="sub">255,042 orders · avg 37.4 min · p90 47 min</div>
       </div>
 
       <div class="row">
         <div class="rh"><span class="nm">Chinese</span>
-          <span class="rt">5.7%</span></div>
-        <div class="track"><div class="fill" style="width:15.4%;
+          <span class="rt">5.5%</span></div>
+        <div class="track"><div class="fill" style="width:14.8%;
              background:var(--fast)"></div></div>
-        <div class="sub">4,311 orders · avg 33.3 min · p90 42 min</div>
+        <div class="sub">220,635 orders · avg 33.3 min · p90 42 min</div>
       </div>
 
       <div class="row">
         <div class="rh"><span class="nm">Pizza</span>
           <span class="rt">4.2%</span></div>
-        <div class="track"><div class="fill" style="width:11.4%;
+        <div class="track"><div class="fill" style="width:11.2%;
              background:var(--fast)"></div></div>
-        <div class="sub">5,098 orders · avg 32.3 min · p90 41 min</div>
+        <div class="sub">248,644 orders · avg 32.3 min · p90 41 min</div>
       </div>
 
       <div class="row">
         <div class="rh"><span class="nm">South Indian</span>
-          <span class="rt">2.2%</span></div>
-        <div class="track"><div class="fill" style="width:5.9%;
+          <span class="rt">1.9%</span></div>
+        <div class="track"><div class="fill" style="width:5.3%;
              background:var(--fast)"></div></div>
-        <div class="sub">5,255 orders · avg 29.3 min · p90 38 min</div>
+        <div class="sub">265,018 orders · avg 29.3 min · p90 38 min</div>
       </div>
 
       <div class="row">
         <div class="rh"><span class="nm">Rolls</span>
-          <span class="rt">0.8%</span></div>
-        <div class="track"><div class="fill" style="width:2.1%;
+          <span class="rt">0.9%</span></div>
+        <div class="track"><div class="fill" style="width:2.4%;
              background:var(--fast)"></div></div>
-        <div class="sub">4,868 orders · avg 26.2 min · p90 35 min</div>
+        <div class="sub">258,123 orders · avg 26.2 min · p90 34 min</div>
       </div>
 
       <div class="row">
         <div class="rh"><span class="nm">Healthy</span>
-          <span class="rt">0.6%</span></div>
-        <div class="track"><div class="fill" style="width:1.7%;
+          <span class="rt">0.7%</span></div>
+        <div class="track"><div class="fill" style="width:1.9%;
              background:var(--fast)"></div></div>
-        <div class="sub">5,650 orders · avg 25.2 min · p90 34 min</div>
+        <div class="sub">244,198 orders · avg 25.2 min · p90 33 min</div>
       </div>
 
       <div class="row">
         <div class="rh"><span class="nm">Desserts</span>
           <span class="rt">0.4%</span></div>
-        <div class="track"><div class="fill" style="width:1.1%;
+        <div class="track"><div class="fill" style="width:1.2%;
              background:var(--fast)"></div></div>
-        <div class="sub">4,778 orders · avg 23.2 min · p90 31 min</div>
+        <div class="sub">255,764 orders · avg 23.1 min · p90 31 min</div>
       </div>
   <p class="caveat"><b>Synthetic data.</b> Orders come from a seeded generator
      with defects injected on purpose, and the prep times the marts recover are
@@ -154,24 +154,24 @@
      Without this, &ldquo;we load clean data&rdquo; is a claim with nothing
      behind it, and a defect rate that doubles overnight looks like a quiet week.</p>
   <div class="kpis">
-    <div class="kpi"><div class="kv">40,000</div><div class="kl">orders loaded</div></div>
-    <div class="kpi"><div class="kv">39,826</div><div class="kl">passed every rule</div></div>
-    <div class="kpi"><div class="kv">174</div><div class="kl">quarantined</div></div>
-    <div class="kpi"><div class="kv">0.43%</div><div class="kl">defect rate</div></div>
+    <div class="kpi"><div class="kv">2,000,000</div><div class="kl">orders loaded</div></div>
+    <div class="kpi"><div class="kv">1,990,975</div><div class="kl">passed every rule</div></div>
+    <div class="kpi"><div class="kv">9,025</div><div class="kl">quarantined</div></div>
+    <div class="kpi"><div class="kv">0.45%</div><div class="kl">defect rate</div></div>
   </div>
   <table style="margin-top:14px">
     <thead><tr><th>Rule</th><th class="n">Rows</th></tr></thead>
-    <tbody><tr><td class='mono'>negative_duration</td><td class='n'>86</td></tr>
-<tr><td class='mono'>negative_amount</td><td class='n'>55</td></tr>
-<tr><td class='mono'>implausible_amount</td><td class='n'>32</td></tr>
-<tr><td class='mono'>amount_vs_lines_mismatch</td><td class='n'>88</td></tr>
-<tr><td class='mono'>orphaned_restaurant</td><td class='n'>171</td></tr>
-<tr><td class='mono'>reviews_total</td><td class='n'>16,878</td></tr>
-<tr><td class='mono'>reviews_rating_withheld</td><td class='n'>1,326</td></tr></tbody>
+    <tbody><tr><td class='mono'>negative_duration</td><td class='n'>4,051</td></tr>
+<tr><td class='mono'>negative_amount</td><td class='n'>3,025</td></tr>
+<tr><td class='mono'>implausible_amount</td><td class='n'>1,946</td></tr>
+<tr><td class='mono'>amount_vs_lines_mismatch</td><td class='n'>4,986</td></tr>
+<tr><td class='mono'>orphaned_restaurant</td><td class='n'>8,041</td></tr>
+<tr><td class='mono'>reviews_total</td><td class='n'>839,910</td></tr>
+<tr><td class='mono'>reviews_rating_withheld</td><td class='n'>67,289</td></tr></tbody>
   </table>
   <p class="caveat" style="margin-top:14px"><b>The magnitude check found
-     32; reconciling the header against its line
-     items found 88.</b> A ceiling cannot
+     1946; reconciling the header against its line
+     items found 4986.</b> A ceiling cannot
      catch a small basket multiplied by a hundred &mdash; one order here is a
      real &#8377;91.21 carried as &#8377;9,121.00, which is under any plausible
      ceiling and reads as an ordinary large order. Two independent derivations
@@ -183,11 +183,11 @@
   <table>
     <thead><tr><th>City</th><th class="n">Orders</th>
       <th class="n">Avg minutes</th><th class="n">Breach rate</th></tr></thead>
-    <tbody><tr><td>Hyderabad</td><td class='n'>7,236</td><td class='n'>31.3</td><td class='n'>9.1%</td></tr>
-<tr><td>Bengaluru</td><td class='n'>8,865</td><td class='n'>31.7</td><td class='n'>8.3%</td></tr>
-<tr><td>Pune</td><td class='n'>8,145</td><td class='n'>31.2</td><td class='n'>7.6%</td></tr>
-<tr><td>Kochi</td><td class='n'>8,085</td><td class='n'>31.0</td><td class='n'>7.6%</td></tr>
-<tr><td>Jaipur</td><td class='n'>7,495</td><td class='n'>30.4</td><td class='n'>6.4%</td></tr></tbody>
+    <tbody><tr><td>Bengaluru</td><td class='n'>409,710</td><td class='n'>31.3</td><td class='n'>8.1%</td></tr>
+<tr><td>Kochi</td><td class='n'>397,747</td><td class='n'>31.4</td><td class='n'>7.8%</td></tr>
+<tr><td>Pune</td><td class='n'>426,153</td><td class='n'>31.1</td><td class='n'>7.8%</td></tr>
+<tr><td>Hyderabad</td><td class='n'>376,291</td><td class='n'>31.0</td><td class='n'>7.7%</td></tr>
+<tr><td>Jaipur</td><td class='n'>381,074</td><td class='n'>31.0</td><td class='n'>7.7%</td></tr></tbody>
   </table>
 </section>
 
