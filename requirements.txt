@@ -11,7 +11,7 @@ pytest>=8.0
 # boto3>=1.34
 
 # The AI layer. Optional by design -- every model except mart_review_insights
-# builds without it, and all 77 tests pass with no key set anywhere.
+# builds without it, and all 84 tests pass with no key set anywhere.
 # openai>=1.40
 
 # The Snowflake path. Not needed to run this project locally.

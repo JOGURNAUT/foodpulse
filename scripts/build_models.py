@@ -146,6 +146,16 @@ SCHEMA_TESTS = [
      "group by restaurant_id having count(*) > 1"),
 ]
 
+# Snapshots: slowly-changing dimensions, kept in their own list because they are
+# not models. A model is rebuilt from its source; a snapshot accumulates history
+# the source has already thrown away, so it can never be recomputed -- drop the
+# table and the history is gone for good.
+SNAPSHOTS = [
+    ("snap_restaurant", "snapshots/snap_restaurant.sql"),
+]
+
+_SNAPSHOT = re.compile(
+    r"\{%\s*snapshot\s+\w+\s*%\}(.*?)\{%\s*endsnapshot\s*%\}", re.S)
 _SOURCE = re.compile(r"\{\{\s*source\(\s*'raw'\s*,\s*'(\w+)'\s*\)\s*\}\}")
 _REF = re.compile(r"\{\{\s*ref\(\s*'(\w+)'\s*\)\s*\}\}")
 _VAR = re.compile(r"\{\{\s*var\(\s*'(\w+)'\s*\)\s*\}\}")
@@ -184,7 +194,13 @@ def read_config(sql: str, path: pathlib.Path) -> dict:
 
 def compile_sql(path: pathlib.Path, *, name: str = "", incremental: bool = False) -> str:
     """Resolve the tags dbt would resolve, and refuse any it would not."""
-    sql = path.read_text(encoding="utf-8")
+    return compile_sql_text(path.read_text(encoding="utf-8"), path,
+                            name=name, incremental=incremental)
+
+
+def compile_sql_text(sql: str, path: pathlib.Path, *, name: str = "",
+                     incremental: bool = False) -> str:
+    """The same, on a string already in hand -- a snapshot's inner select."""
     sql = _CONFIG.sub("", sql)
     # The incremental block is kept only on a run that is actually incremental,
     # which is what is_incremental() means: the model is incremental, the
@@ -279,6 +295,86 @@ def build_model(conn, name: str, path: pathlib.Path, *, full_refresh: bool) -> s
     return "incremental (merge)"
 
 
+def build_snapshot(conn, name: str, path: pathlib.Path) -> str:
+    """Type-2 slowly changing dimension: one row per version, with its window.
+
+    The source export is a picture of right now. A restaurant that moved cities
+    in September looks, in today's file, like it was always where it is now --
+    and every September order gets attributed to the wrong city the moment a
+    report joins the current dimension. The source does not lie; it has no
+    memory, and nothing downstream can recover what it overwrote.
+
+    So each version keeps its own row:
+
+        R00042  Pune        2026-08-01 -> 2026-09-14   (closed)
+        R00042  Bengaluru   2026-09-14 -> null         (current)
+
+    One timestamp is used for the whole run, so a closed row's valid_to is
+    exactly the new row's valid_from. If they differed by even a microsecond, a
+    point-in-time query landing in that gap would find no row at all -- or, if
+    they overlapped, two.
+
+    What this does NOT do, and dbt does not either by default: a key that
+    disappears from the source keeps its row open forever. There is no way to
+    tell a deletion from a row the export happened to omit, and guessing wrong
+    closes a live restaurant.
+    """
+    raw = path.read_text(encoding="utf-8")
+    body = _SNAPSHOT.search(raw)
+    if not body:
+        raise ValueError(f"{path.name} has no {{% snapshot %}} block")
+
+    cfg = read_config(raw, path)
+    key = cfg.get("unique_key")
+    check_cols = cfg.get("check_cols")
+    if not key or not check_cols:
+        raise ValueError(f"{name}: needs unique_key and check_cols")
+    if cfg.get("strategy", "check") != "check":
+        raise NotImplementedError(f"{name}: only the check strategy is implemented")
+
+    inner = compile_sql_text(body.group(1), path)
+    cols = columns_of(conn, inner)
+
+    if relation_type(conn, name) != "TABLE":
+        conn.execute(f"""
+            CREATE TABLE {name} AS
+            SELECT *,
+                   current_timestamp          AS dbt_valid_from,
+                   cast(NULL AS TIMESTAMP)    AS dbt_valid_to
+            FROM ({inner}) s
+        """)
+        return "snapshot (first)"
+
+    # One timestamp for the whole run. See the docstring.
+    stamp = conn.execute("SELECT current_timestamp").fetchone()[0]
+    changed = " OR ".join(f"s.{c} IS DISTINCT FROM t.{c}" for c in check_cols)
+
+    before = conn.execute(f"SELECT count(*) FROM {name}").fetchone()[0]
+
+    conn.execute(f"""
+        UPDATE {name} AS t
+        SET dbt_valid_to = ?
+        WHERE t.dbt_valid_to IS NULL
+          AND EXISTS (SELECT 1 FROM ({inner}) s
+                      WHERE s.{key} = t.{key} AND ({changed}))
+    """, [stamp])
+
+    # Anything without an open row now: either a key whose version was just
+    # closed above, or a key seen for the first time. Both want a new row.
+    collist = ", ".join(cols)
+    conn.execute(f"""
+        INSERT INTO {name} ({collist}, dbt_valid_from, dbt_valid_to)
+        SELECT {", ".join(f"s.{c}" for c in cols)}, ?, NULL
+        FROM ({inner}) s
+        LEFT JOIN {name} t
+               ON t.{key} = s.{key} AND t.dbt_valid_to IS NULL
+        WHERE t.{key} IS NULL
+    """, [stamp])
+
+    after = conn.execute(f"SELECT count(*) FROM {name}").fetchone()[0]
+    return f"snapshot (+{after - before})"
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -309,6 +405,19 @@ def main(argv=None) -> int:
             took = time.perf_counter() - started
             rows = conn.execute(f"SELECT count(*) FROM {name}").fetchone()[0]
             print(f"  {how:<20} {name:<30} {rows:>10,} rows  {took:6.2f}s")
+
+        if not args.select:
+            print("\nsnapshots")
+            for name, relative in SNAPSHOTS:
+                started = time.perf_counter()
+                how = build_snapshot(conn, name, DBT / relative)
+                took = time.perf_counter() - started
+                rows = conn.execute(f"SELECT count(*) FROM {name}").fetchone()[0]
+                open_rows = conn.execute(
+                    f"SELECT count(*) FROM {name} WHERE dbt_valid_to IS NULL"
+                ).fetchone()[0]
+                print(f"  {how:<20} {name:<30} {rows:>10,} rows  "
+                      f"({open_rows:,} current)  {took:6.2f}s")
 
         if args.select or args.skip_tests:
             return 0

@@ -1,7 +1,7 @@
 # FoodPulse
 
 A food-delivery analytics warehouse: **S3 → Snowflake RAW → dbt → marts → AI**,
-orchestrated by Airflow, with **77 tests** and a generated results page.
+orchestrated by Airflow, with **84 tests** and a generated results page.
 
 **[Live results →](https://jogurnaut.github.io/foodpulse/)** — generated from the
 warehouse on every run, never typed in.
@@ -26,7 +26,7 @@ python -m foodpulse.generate       # 2,000,000 orders, seeded, defects injected
 python -m foodpulse.load           # into DuckDB
 python scripts/build_models.py     # 17 models, then 35 model tests
 python scripts/build_report.py     # write docs/index.html
-python -m pytest tests/ -q         # 42 tests on the Python layer
+python -m pytest tests/ -q         # 49 tests on the Python layer
 
 streamlit run dashboard/app.py     # optional, live dashboard
 ```
@@ -56,7 +56,7 @@ What is mine, and what the walkthrough does not have:
 
 | | |
 |---|---|
-| **77 tests** | 29 schema, 6 singular, 42 pytest. The walkthrough has 16 schema tests and an empty `tests/` directory, so nothing singular |
+| **84 tests** | 29 schema, 6 singular, 49 pytest. The walkthrough has 16 schema tests and an empty `tests/` directory, so nothing singular |
 | **A local target** | DuckDB, so this runs from a clone with no account at all |
 | **A defect generator** | seeded, six failure classes injected at tunable rates |
 | **A data-quality mart** | every excluded row counted under the rule that excluded it |
@@ -144,12 +144,16 @@ quantities and rates.
 | `assert_sla_rule_is_applied_once` | the threshold lives in one `var`; a mart re-deriving it with its own number is how two dashboards disagree about the same day |
 | `assert_rate_has_a_denominator` | a rate over zero orders is a division nobody noticed |
 
-**42 pytest**, covering what SQL cannot:
+**49 pytest**, covering what SQL cannot:
 
 - **14** on the generator and the warehouse router — that the generator still
   injects the defects the models are written to catch. A generator that quietly
   stopped would leave every dbt test passing over clean data.
 - **8** on the incremental merge, against a real warehouse, nothing mocked.
+- **7** on the type-2 snapshot, including one asserting a point-in-time join
+  finds exactly one row at the version boundary — a gap there drops the order
+  from every historical join, an overlap counts it twice, and both look fine in
+  a row count.
 - **20** on the text-to-SQL guard, none of which call a model.
 
 ## The SQL guard
@@ -211,12 +215,13 @@ sql/snowflake/         setup, storage integration, stage, raw tables, COPY INTO
 dbt_foodpulse/
   models/staging/      typed, deduplicated, flagged
   models/marts/        2 incremental facts, 4 dimensions, 5 marts
+  snapshots/           type-2 slowly changing dimension
   macros/              schema naming
   tests/               6 singular tests
 airflow/               Airflow 3 on Docker, one daily DAG
 ai/                    LLM enrichment, RAG, text-to-SQL
 dashboard/             Streamlit
 scripts/               upload to S3, build the models, build the report
-tests/                 42 pytest
+tests/                 49 pytest
 docs/index.html        generated
 ```
