@@ -25,7 +25,7 @@ if str(ROOT) not in sys.path:
 
 from foodpulse.warehouse import open_warehouse  # noqa: E402
 
-OUT = ROOT / "docs" / "results.html"
+OUT = ROOT / "docs" / "index.html"
 SLA_MINUTES = 45
 
 # Categorical slots from a palette checked for colourblind separation and

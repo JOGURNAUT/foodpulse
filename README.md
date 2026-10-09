@@ -3,7 +3,7 @@
 A food-delivery analytics warehouse: CSV exports → raw tables → dbt staging →
 marts, with **42 tests** and a generated results page.
 
-**[Results →](docs/results.html)** — regenerated from the warehouse on every run.
+**[Live results →](https://jogurnaut.github.io/foodpulse/)** — generated from the warehouse on every run, never typed in.
 
 ```
 A flat 45-minute delivery promise breaks 37% of the time on biryani
@@ -20,7 +20,7 @@ is a promise that is mostly idle at one end and mostly broken at the other.
 python -m foodpulse.generate        # 40,000 orders, seeded, defects injected
 python -m foodpulse.load            # into DuckDB
 python scripts/build_models.py      # build the models, run all 28 model tests
-python scripts/build_report.py      # write docs/results.html
+python scripts/build_report.py      # write docs/index.html
 python -m pytest tests/ -q          # 14 tests on the generator and loader
 ```
 
@@ -149,5 +149,5 @@ dbt_foodpulse/
   tests/               6 singular tests
 scripts/               build the models and the report
 tests/                 14 pytest
-docs/results.html      generated
+docs/index.html      generated
 ```
