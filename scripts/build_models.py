@@ -70,6 +70,14 @@ MODELS = [
     ("mart_data_quality", "models/marts/mart_data_quality.sql"),
 ]
 
+# Tagged `ai`: these depend on review_enriched, which the LLM task produces.
+# Skipped unless that table exists, so the core warehouse builds and passes
+# every test with no API key anywhere near it. `dbt build --exclude tag:ai` is
+# the same idea on the real thing.
+AI_MODELS = [
+    ("mart_review_insights", "models/marts/mart_review_insights.sql"),
+]
+
 # The schema tests from the YAML, written as the queries dbt generates. Each one
 # returns rows only on failure.
 SCHEMA_TESTS = [
@@ -285,7 +293,14 @@ def main(argv=None) -> int:
     failures: list[tuple[str, str, int]] = []
     try:
         print(f"models  ({wh.flavour})")
-        for name, relative in MODELS:
+        planned = list(MODELS)
+        if relation_type(conn, "review_enriched"):
+            planned += AI_MODELS
+        elif not args.select:
+            print(f"  {'skipped':<20} {'tag:ai':<30}  "
+                  f"review_enriched does not exist yet")
+
+        for name, relative in planned:
             if args.select and name != args.select:
                 continue
             started = time.perf_counter()
