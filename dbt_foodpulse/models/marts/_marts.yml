@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: One row per order, LEFT JOINed to its restaurant so orphans survive the join.
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: is_orphan
+        description: Restaurant missing from the dimension -- a row deleted between two exports.
+        tests: [not_null]
+      - name: order_date
+        tests: [not_null]
+
+  - name: dim_restaurant
+    columns:
+      - name: restaurant_id
+        tests: [unique, not_null]
+      - name: orders_total
+        tests:
+          - not_null
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
+
+  - name: mart_city_daily
+    columns:
+      - name: city_day_key
+        tests: [unique, not_null]
+      - name: sla_breach_rate
+        tests:
+          - dbt_utils.accepted_range: {min_value: 0, max_value: 1, inclusive: true}
+
+  - name: mart_cuisine_sla
+    columns:
+      - name: cuisine
+        tests: [unique, not_null]
+      - name: p90_minutes
+        tests: [not_null]
