@@ -3,8 +3,10 @@
 A food-delivery analytics warehouse: **S3 → Snowflake RAW → dbt → marts → AI**,
 orchestrated by Airflow, with **84 tests** and a generated results page.
 
-**[Live results →](https://jogurnaut.github.io/foodpulse/)** — generated from the
-warehouse on every run, never typed in.
+**[Overview →](https://jogurnaut.github.io/foodpulse/)** ·
+**[Live results →](https://jogurnaut.github.io/foodpulse/results.html)** ·
+**[Architecture →](https://jogurnaut.github.io/foodpulse/architecture.html)**
+— every figure generated from the warehouse on every run, never typed in.
 
 ```
 A flat 45-minute delivery promise breaks 37% of the time on biryani
@@ -25,7 +27,7 @@ pip install -r requirements.txt
 python -m foodpulse.generate       # 2,000,000 orders, seeded, defects injected
 python -m foodpulse.load           # into DuckDB
 python scripts/build_models.py     # 17 models, then 35 model tests
-python scripts/build_report.py     # write docs/index.html
+python scripts/build_report.py     # write docs/results.html
 python -m pytest tests/ -q         # 49 tests on the Python layer
 
 streamlit run dashboard/app.py     # optional, live dashboard
@@ -223,5 +225,7 @@ ai/                    LLM enrichment, RAG, text-to-SQL
 dashboard/             Streamlit
 scripts/               upload to S3, build the models, build the report
 tests/                 49 pytest
-docs/index.html        generated
+docs/index.html        the Overview page
+docs/architecture.html architecture diagram, iframe-wrapped
+docs/results.html      generated
 ```

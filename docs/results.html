@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FoodPulse — Results</title>
+<meta name="description" content="SLA breach rate by cuisine, what the warehouse throws out and why, and the per-city breakdown, every figure queried from the warehouse at build time.">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<nav class="sitenav" aria-label="Pages">
+  <a href="index.html">Overview</a>
+  <a href="architecture.html">Architecture</a>
+  <a href="results.html" aria-current="page">Results</a>
+  <span class="spacer"></span>
+  <a class="out" href="https://github.com/JOGURNAUT/foodpulse">Source</a>
+  <button class="themetoggle" type="button">Light</button>
+</nav>
+
+<div class="wrap">
+
+<p class="eyebrow">FoodPulse &middot; delivery SLA</p>
+<h1>A flat 45-minute promise breaks 37% of the time on
+    biryani and 0.4% on desserts.</h1>
+<p class="stamp">generated 2026-10-09 16:03 UTC from the duckdb warehouse
+   &middot; 2,000,000 orders over 180 days
+   &middot; every figure queried at build time</p>
+
+<section>
+  <h2>SLA breach rate by cuisine</h2>
+  <p class="lede">The promise does not know what it promised. Kitchen time is a
+     property of the dish &mdash; a biryani is cooked to order, a dessert is
+     plated &mdash; and one flat threshold across all of them is wrong by
+     84&times; between the ends of this list.</p>
+  <div class="legend">
+    <span><i class="swatch" style="background: var(--series-a)"></i> breach rate above 10%</span>
+    <span><i class="swatch" style="background: var(--series-b)"></i> below 10%</span>
+  </div>
+  <div class="bars">
+      <div class="bar-row">
+        <div class="bar-head">
+          <span class="bar-name">Biryani</span>
+          <span class="bar-val">37.1% breach</span>
+        </div>
+        <div class="track">
+          <div class="fill" style="width: 100.0%;
+               background: var(--series-a)"></div>
+        </div>
+        <div class="bar-sub">235,536 orders &middot; avg 43.6 min &middot;
+             p90 55 min</div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-head">
+          <span class="bar-name">North Indian</span>
+          <span class="bar-val">13.8% breach</span>
+        </div>
+        <div class="track">
+          <div class="fill" style="width: 37.1%;
+               background: var(--series-a)"></div>
+        </div>
+        <div class="bar-sub">255,042 orders &middot; avg 37.4 min &middot;
+             p90 47 min</div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-head">
+          <span class="bar-name">Chinese</span>
+          <span class="bar-val">5.5% breach</span>
+        </div>
+        <div class="track">
+          <div class="fill" style="width: 14.8%;
+               background: var(--series-b)"></div>
+        </div>
+        <div class="bar-sub">220,635 orders &middot; avg 33.3 min &middot;
+             p90 42 min</div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-head">
+          <span class="bar-name">Pizza</span>
+          <span class="bar-val">4.2% breach</span>
+        </div>
+        <div class="track">
+          <div class="fill" style="width: 11.2%;
+               background: var(--series-b)"></div>
+        </div>
+        <div class="bar-sub">248,644 orders &middot; avg 32.3 min &middot;
+             p90 41 min</div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-head">
+          <span class="bar-name">South Indian</span>
+          <span class="bar-val">1.9% breach</span>
+        </div>
+        <div class="track">
+          <div class="fill" style="width: 5.3%;
+               background: var(--series-b)"></div>
+        </div>
+        <div class="bar-sub">265,018 orders &middot; avg 29.3 min &middot;
+             p90 38 min</div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-head">
+          <span class="bar-name">Rolls</span>
+          <span class="bar-val">0.9% breach</span>
+        </div>
+        <div class="track">
+          <div class="fill" style="width: 2.4%;
+               background: var(--series-b)"></div>
+        </div>
+        <div class="bar-sub">258,123 orders &middot; avg 26.2 min &middot;
+             p90 34 min</div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-head">
+          <span class="bar-name">Healthy</span>
+          <span class="bar-val">0.7% breach</span>
+        </div>
+        <div class="track">
+          <div class="fill" style="width: 1.9%;
+               background: var(--series-b)"></div>
+        </div>
+        <div class="bar-sub">244,198 orders &middot; avg 25.2 min &middot;
+             p90 33 min</div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-head">
+          <span class="bar-name">Desserts</span>
+          <span class="bar-val">0.4% breach</span>
+        </div>
+        <div class="track">
+          <div class="fill" style="width: 1.2%;
+               background: var(--series-b)"></div>
+        </div>
+        <div class="bar-sub">255,764 orders &middot; avg 23.1 min &middot;
+             p90 31 min</div>
+      </div></div>
+  <p class="caveat"><b>Synthetic data.</b> Orders come from a seeded generator
+     with defects injected on purpose, and the prep times the marts recover are
+     the ones the generator was given. What is not circular is the shape: a
+     single SLA across populations with different floors is a promise that is
+     mostly idle at one end and mostly broken at the other.</p>
+</section>
+
+<section>
+  <h2>What the warehouse threw out</h2>
+  <p class="lede">Every excluded row, counted under the rule that excluded it.
+     Without this, &ldquo;we load clean data&rdquo; is a claim with nothing
+     behind it, and a defect rate that doubles overnight looks like a quiet week.</p>
+  <div class="kpis">
+    <div class="kpi"><div class="kv">2,000,000</div><div class="kl">orders loaded</div></div>
+    <div class="kpi is-ok"><div class="kv">1,990,975</div><div class="kl">passed every rule</div></div>
+    <div class="kpi is-warn"><div class="kv">9,025</div><div class="kl">quarantined</div></div>
+    <div class="kpi"><div class="kv">0.45%</div><div class="kl">defect rate</div></div>
+  </div>
+  <div class="tbox" style="margin-top: 14px">
+    <table data-sortable>
+      <thead><tr><th data-sort>Rule</th><th class="n" data-sort>Rows</th></tr></thead>
+      <tbody><tr><td class='mono'>negative_duration</td><td class='n'>4,051</td></tr>
+<tr><td class='mono'>negative_amount</td><td class='n'>3,025</td></tr>
+<tr><td class='mono'>implausible_amount</td><td class='n'>1,946</td></tr>
+<tr><td class='mono'>amount_vs_lines_mismatch</td><td class='n'>4,986</td></tr>
+<tr><td class='mono'>orphaned_restaurant</td><td class='n'>8,041</td></tr>
+<tr><td class='mono'>reviews_total</td><td class='n'>839,910</td></tr>
+<tr><td class='mono'>reviews_rating_withheld</td><td class='n'>67,289</td></tr></tbody>
+    </table>
+  </div>
+  <p class="caveat" style="margin-top: 14px"><b>The magnitude check found
+     1946; reconciling the header against its line items found
+     4986 &mdash; 2.6&times; more.</b> A ceiling cannot
+     catch a small basket multiplied by a hundred &mdash; one order here is a
+     real &#8377;91.21 carried as &#8377;9,121.00, which is under any plausible
+     ceiling and reads as an ordinary large order. Two independent derivations
+     of the same number disagreeing is the only signal there is.</p>
+</section>
+
+<section>
+  <h2>By city</h2>
+  <p class="lede">Click or press Enter on a column heading to sort.</p>
+  <div class="tbox">
+    <table data-sortable>
+      <thead><tr><th data-sort>City</th><th class="n" data-sort>Orders</th>
+        <th class="n" data-sort>Avg minutes</th><th class="n" data-sort>Breach rate</th></tr></thead>
+      <tbody><tr><td>Bengaluru</td><td class='n'>409,710</td><td class='n'>31.3</td><td class='n'>8.1%</td></tr>
+<tr><td>Kochi</td><td class='n'>397,747</td><td class='n'>31.4</td><td class='n'>7.8%</td></tr>
+<tr><td>Pune</td><td class='n'>426,153</td><td class='n'>31.1</td><td class='n'>7.8%</td></tr>
+<tr><td>Hyderabad</td><td class='n'>376,291</td><td class='n'>31.0</td><td class='n'>7.7%</td></tr>
+<tr><td>Jaipur</td><td class='n'>381,074</td><td class='n'>31.0</td><td class='n'>7.7%</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>How it is built</h2>
+  <p class="lede">CSV exports &rarr; S3 &rarr; raw tables, loaded as text with
+     nothing cast &rarr; dbt staging views that type, deduplicate and flag
+     &rarr; 11 marts. The warehouse is addressed by URI: a DuckDB file locally,
+     Snowflake in the cloud, same models either way.</p>
+  <p class="lede" style="margin-top:-8px">
+     <a href="architecture.html">Architecture diagram &rarr;</a></p>
+  <p class="caveat">Raw stays untyped on purpose. Casting at load turns a bad
+     value into a row the loader silently dropped; casting in staging turns it
+     into a failed test with a name. <b>84 tests</b> run against the project
+     &mdash; 29 schema, 6 singular, 49 pytest &mdash; and the singular ones are
+     the interesting half: that orphaned orders survive their join, that a
+     withheld rating is never scored as a zero, that no order lands in two
+     buckets.</p>
+  <p class="caveat"><b>2,000 restaurants are tracked as a type-2
+     snapshot</b>, 2,000 of them on their first and only version
+     so far. A restaurant that moves cities keeps its old row closed at the
+     moment it changed, so an order placed before the move still joins to the
+     city it actually happened in &mdash; seven tests hold the boundary exact,
+     including one that checks four moments either side of it for exactly one
+     matching row, never zero and never two.</p>
+</section>
+
+</div>
+
+<script src="site.js"></script>
+</body>
+</html>

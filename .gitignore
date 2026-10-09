@@ -9,3 +9,7 @@ dbt_foodpulse/logs/
 airflow/.env
 .env
 airflow/logs/
+.archify/
+docs/*.browser-check.json
+docs/*.delivery.json
+docs/*.finalize*.json

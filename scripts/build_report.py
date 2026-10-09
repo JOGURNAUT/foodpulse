@@ -10,6 +10,10 @@ lasts thirty days -- so a link to one dies about a month after it is shared,
 which is roughly when somebody gets round to opening it. This page keeps working
 after the account is gone.
 
+Chrome, colour and type come from docs/site.css, shared with the Overview page
+and with Dispatch and Arrival's own results pages, so the three projects read
+as one body of work rather than three documents that happen to be linked.
+
     python scripts/build_report.py
 """
 
@@ -25,13 +29,8 @@ if str(ROOT) not in sys.path:
 
 from foodpulse.warehouse import open_warehouse  # noqa: E402
 
-OUT = ROOT / "docs" / "index.html"
+OUT = ROOT / "docs" / "results.html"
 SLA_MINUTES = 45
-
-# Categorical slots from a palette checked for colourblind separation and
-# contrast in both modes: worst adjacent CVD dE 24.7 light / 26.8 dark.
-SLOW = {"light": "#eb6834", "dark": "#d95926"}
-FAST = {"light": "#2a78d6", "dark": "#3987e5"}
 
 
 def fetch() -> dict:
@@ -50,10 +49,14 @@ def fetch() -> dict:
             "FROM mart_city_daily GROUP BY city ORDER BY 4 DESC").fetchall()
         days = conn.execute(
             "SELECT COUNT(DISTINCT order_date) FROM mart_city_daily").fetchone()[0]
+        snap_rows, snap_open = conn.execute(
+            "SELECT count(*), count(*) FILTER (WHERE dbt_valid_to IS NULL) "
+            "FROM snap_restaurant").fetchone()
     finally:
         conn.close()
     return {"cuisines": cuisines, "quality": quality, "cities": cities,
             "days": days, "flavour": wh.flavour,
+            "snap_rows": snap_rows, "snap_open": snap_open,
             "built_at": datetime.now(timezone.utc).replace(tzinfo=None)
                                 .strftime("%Y-%m-%d %H:%M UTC")}
 
@@ -69,96 +72,67 @@ def render(d: dict) -> str:
     valid = q.get("orders_valid", 0)
     max_rate = max((c[5] or 0) for c in cs) or 1
 
-    bars = "\n".join(f"""
-      <div class="row">
-        <div class="rh"><span class="nm">{c[0]}</span>
-          <span class="rt">{c[5]:.1%}</span></div>
-        <div class="track"><div class="fill" style="width:{max((c[5] or 0)/max_rate*100, 0.8):.1f}%;
-             background:var(--{'slow' if (c[5] or 0) > 0.1 else 'fast'})"></div></div>
-        <div class="sub">{c[1]:,} orders · avg {c[2]:.1f} min · p90 {c[4]:.0f} min</div>
-      </div>""" for c in cs)
+    def cuisine_row(c):
+        rate = c[5] or 0
+        cls = "a" if rate > 0.1 else "b"
+        return f"""
+      <div class="bar-row">
+        <div class="bar-head">
+          <span class="bar-name">{c[0]}</span>
+          <span class="bar-val">{rate:.1%} breach</span>
+        </div>
+        <div class="track">
+          <div class="fill" style="width: {max(rate / max_rate * 100, 0.8):.1f}%;
+               background: var(--series-{cls})"></div>
+        </div>
+        <div class="bar-sub">{c[1]:,} orders &middot; avg {c[2]:.1f} min &middot;
+             p90 {c[4]:.0f} min</div>
+      </div>"""
+
+    bars = "\n".join(cuisine_row(c) for c in cs)
 
     qrows = "\n".join(
         f"<tr><td class='mono'>{k}</td><td class='n'>{v:,}</td></tr>"
         for k, v in q.items() if k not in ("orders_total", "orders_valid"))
 
-    crows = "\n".join(
-        f"<tr><td>{c[0]}</td><td class='n'>{c[1]:,}</td>"
-        f"<td class='n'>{c[2]:.1f}</td><td class='n'>{c[3]:.1%}</td></tr>"
-        for c in d["cities"])
+    def city_row(c):
+        return (f"<tr><td>{c[0]}</td><td class='n'>{c[1]:,}</td>"
+                f"<td class='n'>{c[2]:.1f}</td><td class='n'>{c[3]:.1%}</td></tr>")
+
+    crows = "\n".join(city_row(c) for c in d["cities"])
+
+    implausible = q.get("implausible_amount", 0)
+    mismatch = q.get("amount_vs_lines_mismatch", 0)
+    mismatch_mult = (mismatch / implausible) if implausible else 0
 
     return f"""<!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FoodPulse — Delivery SLA by Cuisine</title>
-<style>
-  :root {{
-    color-scheme: light;
-    --bg:#f4f4f2; --card:#fcfcfb; --line:#dedcd6;
-    --ink:#0b0b0b; --ink2:#52514e; --ink3:#7b7a74;
-    --slow:{SLOW['light']}; --fast:{FAST['light']}; --track:#e7e5df;
-  }}
-  @media (prefers-color-scheme: dark) {{
-    :root:not([data-theme="light"]) {{
-      color-scheme: dark;
-      --bg:#121211; --card:#1a1a19; --line:#343430;
-      --ink:#fff; --ink2:#c3c2b7; --ink3:#8f8e85;
-      --slow:{SLOW['dark']}; --fast:{FAST['dark']}; --track:#2b2b28;
-    }}
-  }}
-  :root[data-theme="dark"] {{
-    color-scheme: dark;
-    --bg:#121211; --card:#1a1a19; --line:#343430;
-    --ink:#fff; --ink2:#c3c2b7; --ink3:#8f8e85;
-    --slow:{SLOW['dark']}; --fast:{FAST['dark']}; --track:#2b2b28;
-  }}
-  *{{box-sizing:border-box}} html,body{{background:var(--bg);margin:0}}
-  body{{font-family:ui-sans-serif,system-ui,"Segoe UI",sans-serif;color:var(--ink);
-       padding:30px 16px 64px;line-height:1.5}}
-  .wrap{{max-width:860px;margin:0 auto}}
-  .eyebrow{{font:11.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;
-           text-transform:uppercase;color:var(--ink3);margin-bottom:10px}}
-  h1{{font-size:25px;line-height:1.25;margin:0 0 6px;letter-spacing:-.02em}}
-  .stamp{{color:var(--ink3);font-size:11.5px;font-variant-numeric:tabular-nums;
-         margin:0 0 24px}}
-  section{{background:var(--card);border:1px solid var(--line);border-radius:10px;
-          padding:18px 20px;margin-bottom:16px}}
-  h2{{font-size:14px;margin:0 0 3px}}
-  .lede{{color:var(--ink2);font-size:12.5px;margin:0 0 16px;max-width:72ch}}
-  .row{{margin-bottom:14px}}
-  .rh{{display:flex;justify-content:space-between;align-items:baseline;
-      margin-bottom:5px}}
-  .nm{{font-size:13px;font-weight:600}}
-  .rt{{font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--ink2)}}
-  .track{{background:var(--track);border-radius:4px;height:16px;overflow:hidden}}
-  .fill{{height:100%;border-radius:4px}}
-  .sub{{font-size:11px;color:var(--ink3);margin-top:4px;
-       font-variant-numeric:tabular-nums}}
-  table{{width:100%;border-collapse:collapse;font-size:12.5px}}
-  th{{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;
-     color:var(--ink2);padding:0 10px 7px 0;border-bottom:1px solid var(--line)}}
-  td{{padding:7px 10px 7px 0;border-bottom:1px solid var(--line)}}
-  tr:last-child td{{border-bottom:0}}
-  td.n,th.n{{text-align:right;font-variant-numeric:tabular-nums}}
-  .mono{{font-family:ui-monospace,Menlo,monospace;font-size:11.5px}}
-  .caveat{{font-size:11.5px;color:var(--ink3);line-height:1.6;
-          border-left:2px solid var(--line);padding-left:12px}}
-  .kpis{{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-        gap:12px;margin-bottom:4px}}
-  .kpi{{border:1px solid var(--line);border-radius:8px;padding:12px 14px}}
-  .kv{{font-size:22px;font-weight:650;font-variant-numeric:tabular-nums}}
-  .kl{{font-size:11px;color:var(--ink2);margin-top:2px}}
-</style>
+<title>FoodPulse — Results</title>
+<meta name="description" content="SLA breach rate by cuisine, what the warehouse throws out and why, and the per-city breakdown, every figure queried from the warehouse at build time.">
+<link rel="stylesheet" href="site.css">
 </head>
-<body><div class="wrap">
+<body>
 
-<p class="eyebrow">FoodPulse · delivery SLA</p>
+<nav class="sitenav" aria-label="Pages">
+  <a href="index.html">Overview</a>
+  <a href="architecture.html">Architecture</a>
+  <a href="results.html" aria-current="page">Results</a>
+  <span class="spacer"></span>
+  <a class="out" href="https://github.com/JOGURNAUT/foodpulse">Source</a>
+  <button class="themetoggle" type="button">Light</button>
+</nav>
+
+<div class="wrap">
+
+<p class="eyebrow">FoodPulse &middot; delivery SLA</p>
 <h1>A flat {SLA_MINUTES}-minute promise breaks {worst_rate:.0%} of the time on
     {slow[0].lower()} and {best_rate:.1%} on {fast[0].lower()}.</h1>
-<p class="stamp">Generated {d['built_at']} from the {d['flavour']} warehouse ·
-   {total:,} orders over {d['days']} days · every figure queried at build time</p>
+<p class="stamp">generated {d['built_at']} from the {d['flavour']} warehouse
+   &middot; {total:,} orders over {d['days']} days
+   &middot; every figure queried at build time</p>
 
 <section>
   <h2>SLA breach rate by cuisine</h2>
@@ -166,7 +140,11 @@ def render(d: dict) -> str:
      property of the dish &mdash; a biryani is cooked to order, a dessert is
      plated &mdash; and one flat threshold across all of them is wrong by
      {ratio:.0f}&times; between the ends of this list.</p>
-  {bars}
+  <div class="legend">
+    <span><i class="swatch" style="background: var(--series-a)"></i> breach rate above 10%</span>
+    <span><i class="swatch" style="background: var(--series-b)"></i> below 10%</span>
+  </div>
+  <div class="bars">{bars}</div>
   <p class="caveat"><b>Synthetic data.</b> Orders come from a seeded generator
      with defects injected on purpose, and the prep times the marts recover are
      the ones the generator was given. What is not circular is the shape: a
@@ -181,17 +159,19 @@ def render(d: dict) -> str:
      behind it, and a defect rate that doubles overnight looks like a quiet week.</p>
   <div class="kpis">
     <div class="kpi"><div class="kv">{total:,}</div><div class="kl">orders loaded</div></div>
-    <div class="kpi"><div class="kv">{valid:,}</div><div class="kl">passed every rule</div></div>
-    <div class="kpi"><div class="kv">{total - valid:,}</div><div class="kl">quarantined</div></div>
+    <div class="kpi is-ok"><div class="kv">{valid:,}</div><div class="kl">passed every rule</div></div>
+    <div class="kpi is-warn"><div class="kv">{total - valid:,}</div><div class="kl">quarantined</div></div>
     <div class="kpi"><div class="kv">{(total - valid) / total:.2%}</div><div class="kl">defect rate</div></div>
   </div>
-  <table style="margin-top:14px">
-    <thead><tr><th>Rule</th><th class="n">Rows</th></tr></thead>
-    <tbody>{qrows}</tbody>
-  </table>
-  <p class="caveat" style="margin-top:14px"><b>The magnitude check found
-     {q.get('implausible_amount', 0)}; reconciling the header against its line
-     items found {q.get('amount_vs_lines_mismatch', 0)}.</b> A ceiling cannot
+  <div class="tbox" style="margin-top: 14px">
+    <table data-sortable>
+      <thead><tr><th data-sort>Rule</th><th class="n" data-sort>Rows</th></tr></thead>
+      <tbody>{qrows}</tbody>
+    </table>
+  </div>
+  <p class="caveat" style="margin-top: 14px"><b>The magnitude check found
+     {implausible}; reconciling the header against its line items found
+     {mismatch} &mdash; {mismatch_mult:.1f}&times; more.</b> A ceiling cannot
      catch a small basket multiplied by a hundred &mdash; one order here is a
      real &#8377;91.21 carried as &#8377;9,121.00, which is under any plausible
      ceiling and reads as an ordinary large order. Two independent derivations
@@ -200,28 +180,45 @@ def render(d: dict) -> str:
 
 <section>
   <h2>By city</h2>
-  <table>
-    <thead><tr><th>City</th><th class="n">Orders</th>
-      <th class="n">Avg minutes</th><th class="n">Breach rate</th></tr></thead>
-    <tbody>{crows}</tbody>
-  </table>
+  <p class="lede">Click or press Enter on a column heading to sort.</p>
+  <div class="tbox">
+    <table data-sortable>
+      <thead><tr><th data-sort>City</th><th class="n" data-sort>Orders</th>
+        <th class="n" data-sort>Avg minutes</th><th class="n" data-sort>Breach rate</th></tr></thead>
+      <tbody>{crows}</tbody>
+    </table>
+  </div>
 </section>
 
 <section>
   <h2>How it is built</h2>
-  <p class="lede">CSV exports &rarr; raw tables, loaded as text with nothing cast
-     &rarr; dbt staging views that type, deduplicate and flag &rarr; marts. The
-     warehouse is addressed by URI: a DuckDB file locally, Snowflake in the
-     cloud, same models either way.</p>
+  <p class="lede">CSV exports &rarr; S3 &rarr; raw tables, loaded as text with
+     nothing cast &rarr; dbt staging views that type, deduplicate and flag
+     &rarr; 11 marts. The warehouse is addressed by URI: a DuckDB file locally,
+     Snowflake in the cloud, same models either way.</p>
+  <p class="lede" style="margin-top:-8px">
+     <a href="architecture.html">Architecture diagram &rarr;</a></p>
   <p class="caveat">Raw stays untyped on purpose. Casting at load turns a bad
      value into a row the loader silently dropped; casting in staging turns it
-     into a failed test with a name. <b>28 tests</b> run against the models
-     &mdash; 22 schema, 6 singular &mdash; and the singular ones are the
-     interesting half: that orphaned orders survive their join, that a withheld
-     rating is never scored as a zero, that no order lands in two buckets.</p>
+     into a failed test with a name. <b>84 tests</b> run against the project
+     &mdash; 29 schema, 6 singular, 49 pytest &mdash; and the singular ones are
+     the interesting half: that orphaned orders survive their join, that a
+     withheld rating is never scored as a zero, that no order lands in two
+     buckets.</p>
+  <p class="caveat"><b>{d['snap_rows']:,} restaurants are tracked as a type-2
+     snapshot</b>, {d['snap_open']:,} of them on their first and only version
+     so far. A restaurant that moves cities keeps its old row closed at the
+     moment it changed, so an order placed before the move still joins to the
+     city it actually happened in &mdash; seven tests hold the boundary exact,
+     including one that checks four moments either side of it for exactly one
+     matching row, never zero and never two.</p>
 </section>
 
-</div></body></html>
+</div>
+
+<script src="site.js"></script>
+</body>
+</html>
 """
 
 
