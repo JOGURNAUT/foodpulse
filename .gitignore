@@ -6,3 +6,5 @@ __pycache__/
 .ruff_cache/
 dbt_foodpulse/target/
 dbt_foodpulse/logs/
+airflow/.env
+.env

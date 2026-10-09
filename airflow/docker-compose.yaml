@@ -1,0 +1,127 @@
+# Local Airflow 3 (LocalExecutor) on Docker.
+#
+#   cp example.env .env        # fill in the credentials
+#   docker compose build
+#   docker compose up -d       # UI: http://localhost:8088   (admin / admin)
+#
+# Airflow 3 is not Airflow 2 with a new number. `webserver` is now `api-server`,
+# DAG parsing is its own `dag-processor` container, and inter-component calls
+# are signed with a JWT secret that every container has to share.
+#
+# Port 8088 rather than 8080. 8080 is the most contested port on a developer
+# machine -- another compose stack, a stray container, a local server -- and the
+# failure is confusing: the UI loads and belongs to something else.
+
+x-airflow-common: &airflow-common
+  build: .
+  env_file: .env
+  environment: &airflow-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+
+    # Airflow 3 signs execution-API calls with this. It comes from .env rather
+    # than sitting in this file: a committed secret is a committed secret even
+    # when it is only for a local stack, and this one is what authenticates a
+    # worker to the scheduler.
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET}
+
+    # Tasks reach the execution API by the api-server's SERVICE NAME. Leave this
+    # at localhost in a multi-container setup and every task dies immediately
+    # with a state-mismatch error that says nothing about networking.
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://apiserver:8080/execution/'
+
+    # Read by dbt's profiles.yml through env_var(), and by the AI task.
+    SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT}
+    SNOWFLAKE_USER: ${SNOWFLAKE_USER}
+    SNOWFLAKE_PASSWORD: ${SNOWFLAKE_PASSWORD}
+    OPENAI_API_KEY: ${OPENAI_API_KEY}
+    ENRICH_SAMPLE_N: ${ENRICH_SAMPLE_N:-200}
+
+    # The COPY task's connection, assembled from the same variables rather than
+    # created by hand in the UI -- a connection that exists only in someone's
+    # browser is not part of the project and is gone with the volume.
+    AIRFLOW_CONN_SNOWFLAKE_DEFAULT: >-
+      {"conn_type":"snowflake",
+       "login":"${SNOWFLAKE_USER}",
+       "password":"${SNOWFLAKE_PASSWORD}",
+       "schema":"RAW",
+       "extra":{"account":"${SNOWFLAKE_ACCOUNT}",
+                "warehouse":"FOODPULSE_WH",
+                "database":"FOODPULSE",
+                "role":"DBT_ROLE"}}
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ../dbt_foodpulse:/opt/airflow/dbt/dbt_foodpulse
+    - ../ai:/opt/airflow/ai
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+
+  # Runs once and exits. Everything else waits for it to succeed rather than for
+  # it to merely start, because a scheduler against an unmigrated database fails
+  # in a way that looks like a broken DAG.
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - >-
+        airflow db migrate &&
+        airflow users create --username admin --password admin
+        --firstname a --lastname b --role Admin --email admin@example.com
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  apiserver:
+    <<: *airflow-common
+    command: api-server
+    ports: ["8088:8080"]
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/version"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  scheduler:
+    <<: *airflow-common
+    command: scheduler
+    restart: always
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  # Airflow 3 parses DAGs in its own process. Without this container the UI runs
+  # and the DAG list stays empty, with nothing in the scheduler log to say why.
+  dag-processor:
+    <<: *airflow-common
+    command: dag-processor
+    restart: always
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
