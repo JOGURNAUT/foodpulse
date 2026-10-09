@@ -1,0 +1,11 @@
+{
+  "__comment": "Placeholder trust, used only to create the role. Snowflake will not assume it yet -- it cannot, because its own IAM user does not appear here. Replace with the -final document as soon as DESC INTEGRATION returns the real values.",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::<YOUR_AWS_ACCOUNT_ID>:root" },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}

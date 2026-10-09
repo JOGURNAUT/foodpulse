@@ -1,0 +1,14 @@
+{
+  "__comment": "The real trust. Principal is Snowflake's OWN IAM user, not your account root -- root would let anything in your account assume the role, and it is not what Snowflake presents. The external id is what stops the confused-deputy problem: another Snowflake account that learned this role ARN still cannot assume it, because it cannot present your external id. Both values come from DESC INTEGRATION FOODPULSE_S3. Never CREATE OR REPLACE that integration afterwards -- it regenerates the external id and this document silently stops matching.",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": { "AWS": "<STORAGE_AWS_IAM_USER_ARN>" },
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "StringEquals": { "sts:ExternalId": "<STORAGE_AWS_EXTERNAL_ID>" }
+      }
+    }
+  ]
+}
