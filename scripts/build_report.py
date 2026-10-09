@@ -110,7 +110,7 @@ def render(d: dict) -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FoodPulse — Results</title>
+<title>FoodPulse: Results</title>
 <meta name="description" content="SLA breach rate by cuisine, what the warehouse throws out and why, and the per-city breakdown, every figure queried from the warehouse at build time.">
 <link rel="stylesheet" href="site.css">
 </head>
@@ -137,8 +137,8 @@ def render(d: dict) -> str:
 <section>
   <h2>SLA breach rate by cuisine</h2>
   <p class="lede">The promise does not know what it promised. Kitchen time is a
-     property of the dish &mdash; a biryani is cooked to order, a dessert is
-     plated &mdash; and one flat threshold across all of them is wrong by
+     property of the dish: a biryani is cooked to order, a dessert is
+     plated. One flat threshold across all of them is wrong by
      {ratio:.0f}&times; between the ends of this list.</p>
   <div class="legend">
     <span><i class="swatch" style="background: var(--series-a)"></i> breach rate above 10%</span>
@@ -171,8 +171,8 @@ def render(d: dict) -> str:
   </div>
   <p class="caveat" style="margin-top: 14px"><b>The magnitude check found
      {implausible}; reconciling the header against its line items found
-     {mismatch} &mdash; {mismatch_mult:.1f}&times; more.</b> A ceiling cannot
-     catch a small basket multiplied by a hundred &mdash; one order here is a
+     {mismatch}, {mismatch_mult:.1f}&times; more.</b> A ceiling cannot
+     catch a small basket multiplied by a hundred: one order here is a
      real &#8377;91.21 carried as &#8377;9,121.00, which is under any plausible
      ceiling and reads as an ordinary large order. Two independent derivations
      of the same number disagreeing is the only signal there is.</p>
@@ -200,8 +200,8 @@ def render(d: dict) -> str:
      <a href="architecture.html">Architecture diagram &rarr;</a></p>
   <p class="caveat">Raw stays untyped on purpose. Casting at load turns a bad
      value into a row the loader silently dropped; casting in staging turns it
-     into a failed test with a name. <b>84 tests</b> run against the project
-     &mdash; 29 schema, 6 singular, 49 pytest &mdash; and the singular ones are
+     into a failed test with a name. <b>84 tests</b> run against the project:
+     29 schema, 6 singular, 49 pytest, and the singular ones are
      the interesting half: that orphaned orders survive their join, that a
      withheld rating is never scored as a zero, that no order lands in two
      buckets.</p>
@@ -209,7 +209,7 @@ def render(d: dict) -> str:
      snapshot</b>, {d['snap_open']:,} of them on their first and only version
      so far. A restaurant that moves cities keeps its old row closed at the
      moment it changed, so an order placed before the move still joins to the
-     city it actually happened in &mdash; seven tests hold the boundary exact,
+     city it actually happened in. Seven tests hold the boundary exact,
      including one that checks four moments either side of it for exactly one
      matching row, never zero and never two.</p>
 </section>

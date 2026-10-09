@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FoodPulse — Food-Delivery Analytics Warehouse</title>
+<title>FoodPulse: Food-Delivery Analytics Warehouse</title>
 <meta name="description" content="S3 to Snowflake RAW to dbt staging to marts, with 84 tests, an incremental fact and a type-2 snapshot. A flat 45-minute promise breaks 37% of the time on biryani and 0.4% on desserts.">
 <link rel="stylesheet" href="site.css">
 <style>
@@ -73,8 +73,8 @@
     <p class="eyebrow" style="margin-bottom:6px">The finding</p>
     <p style="margin:0 0 10px; font-size:14.5px; line-height:1.5">
       The delivery promise uses <b>one flat 45 minutes for every cuisine</b>.
-      Kitchen time is a property of the dish &mdash; a biryani is cooked to
-      order, a dessert is plated &mdash; so that promise breaks <b>37.1%</b> of
+      Kitchen time is a property of the dish: a biryani is cooked to
+      order, a dessert is plated. That promise breaks <b>37.1%</b> of
       the time on biryani and <b>0.4%</b> of the time on desserts. A single
       threshold across populations with different floors is wrong at both ends.
     </p>
@@ -119,8 +119,8 @@
                 to one SELECT over an allowlist, checked by 20 tests.</span></li>
     </ul>
     <p class="caveat"><b>The data is generated.</b> A seeded script injects six
-       defect classes on purpose &mdash; orphaned orders, duplicate exports,
-       withheld ratings, currency errors &mdash; because a clean dataset cannot
+       defect classes on purpose (orphaned orders, duplicate exports,
+       withheld ratings, currency errors) because a clean dataset cannot
        exercise a quality gate. What is not circular is the shape: a single SLA
        across populations with different floors is wrong at both ends, and a
        test asserts that ordering survives a change of seed.</p>

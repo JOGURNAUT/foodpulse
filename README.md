@@ -5,8 +5,8 @@ orchestrated by Airflow, with **84 tests** and a generated results page.
 
 **[Overview →](https://jogurnaut.github.io/foodpulse/)** ·
 **[Live results →](https://jogurnaut.github.io/foodpulse/results.html)** ·
-**[Architecture →](https://jogurnaut.github.io/foodpulse/architecture.html)**
-— every figure generated from the warehouse on every run, never typed in.
+**[Architecture →](https://jogurnaut.github.io/foodpulse/architecture.html)**:
+every figure generated from the warehouse on every run, never typed in.
 
 ```
 A flat 45-minute delivery promise breaks 37% of the time on biryani
@@ -14,7 +14,7 @@ and 0.4% on desserts.
 ```
 
 That is the finding, and it is not about biryani. Kitchen time is a property of
-the dish — one is cooked to order, one is plated — and a single SLA across both
+the dish: one is cooked to order, one is plated, and a single SLA across both
 is a promise that is mostly idle at one end and mostly broken at the other.
 
 ## Run it
@@ -43,9 +43,9 @@ cd airflow && cp example.env .env && docker compose up -d   # localhost:8088
 
 ## Honest scope
 
-This started from a tutorial build — [Darshil Parmar's Zomato
-walkthrough](https://github.com/darshilparmar/zomato-ai-data-engineering-end-to-end-project)
-— and follows its architecture: S3 lake, keyless storage integration, `COPY
+This started from a tutorial build, [Darshil Parmar's Zomato
+walkthrough](https://github.com/darshilparmar/zomato-ai-data-engineering-end-to-end-project),
+and follows its architecture: S3 lake, keyless storage integration, `COPY
 INTO`, dbt medallion layering, an Airflow DAG, and an AI layer on top.
 
 **What has run and what has not.** The DuckDB path runs end to end, and every
@@ -70,7 +70,7 @@ What is mine, and what the walkthrough does not have:
 
 `fct_orders` and `fct_order_items` are `materialized='incremental'` with a MERGE
 on their own grain. At two million orders a full rebuild is wasted work on every
-run but the first — yesterday's orders do not change.
+run but the first: yesterday's orders do not change.
 
 The obvious incremental filter is *rows newer than the newest row I already
 have*. It quietly loses data. An order placed at 23:58 that reaches the export
@@ -80,7 +80,7 @@ test passes, the row simply is not there.
 
 So the filter reprocesses a trailing window instead, and because the strategy is
 MERGE on the key, rows that come back unchanged are updated in place rather than
-inserted twice. The window costs something — three days of orders every run —
+inserted twice. The window costs something, three days of orders every run,
 and that is the trade being made deliberately.
 
 Two tests hold this down: `test_a_late_arriving_order_is_still_picked_up`, and
@@ -114,14 +114,14 @@ reviews_rating_withheld     67,289      text written, stars skipped
 That gap is the most useful thing here. A ceiling cannot catch a small basket
 multiplied by a hundred: a real ₹91.21 carried as ₹9,121.00 is under any
 plausible ceiling and reads as an ordinary large order. Two independent
-derivations of the same number disagreeing is the only signal there is — which
+derivations of the same number disagreeing is the only signal there is, which
 is why `assert_revenue_reconciles_to_line_items` exists, and why the flag is
 computed in `fct_orders` rather than staging: staging cannot see the line items.
 
 ## Raw stays untyped on purpose
 
 Every raw column is `VARCHAR`. Casting at load means a bad value either fails the
-whole `COPY`, or — with `ON_ERROR = CONTINUE` — is silently skipped and the
+whole `COPY`, or, with `ON_ERROR = CONTINUE`, is silently skipped and the
 counts quietly disagree with the source. The DAG leaves `ON_ERROR` at its
 default, `ABORT_STATEMENT`, on every table: a failed COPY is a phone call, a
 silently short one is a number in a report that somebody acts on.
@@ -131,7 +131,7 @@ failed test with a name, beside the rule it broke.
 
 ## The tests
 
-**29 schema tests** — uniqueness on every grain, not-null on every key,
+**29 schema tests**: uniqueness on every grain, not-null on every key,
 referential integrity across six relationships, accepted ranges on ratings,
 quantities and rates.
 
@@ -148,12 +148,12 @@ quantities and rates.
 
 **49 pytest**, covering what SQL cannot:
 
-- **14** on the generator and the warehouse router — that the generator still
+- **14** on the generator and the warehouse router: that the generator still
   injects the defects the models are written to catch. A generator that quietly
   stopped would leave every dbt test passing over clean data.
 - **8** on the incremental merge, against a real warehouse, nothing mocked.
 - **7** on the type-2 snapshot, including one asserting a point-in-time join
-  finds exactly one row at the version boundary — a gap there drops the order
+  finds exactly one row at the version boundary: a gap there drops the order
   from every historical join, an overlap counts it twice, and both look fine in
   a row count.
 - **20** on the text-to-SQL guard, none of which call a model.
@@ -171,7 +171,7 @@ the data:
 **Only the third actually holds.** The first two are string checks on text a
 model produced; they catch mistakes early and give a clear message, and the
 grant is what makes a miss survivable. A prompt that says "only write SELECT
-statements" is not a guard — it is a request, to a system whose entire behaviour
+statements" is not a guard. It is a request, to a system whose entire behaviour
 is being talked into things.
 
 ## Why DuckDB locally, Snowflake in the cloud
@@ -181,9 +181,9 @@ The warehouse is addressed by URI: `data/foodpulse.duckdb` is a file,
 `foodpulse/warehouse.py` knows which it got.
 
 DuckDB rather than SQLite because the thing being learned is a **columnar**
-warehouse, and SQLite is not one. DuckDB and Snowflake are the same shape —
+warehouse, and SQLite is not one. DuckDB and Snowflake are the same shape:
 columnar storage, vectorised execution, the analytical SQL surface, and both
-have `MERGE INTO` — so the statement the incremental model builds locally is the
+have `MERGE INTO`, so the statement the incremental model builds locally is the
 statement Snowflake would run.
 
 Both paths rather than Snowflake alone because **a trial is thirty days**. A
@@ -199,7 +199,7 @@ Rows stream to CSV rather than being held in memory, so the scale is a flag.
 python -m foodpulse.generate --orders 10000000 --orphan-rate 0.05
 ```
 
-So the per-cuisine finding is a **demonstration, not a measurement** — the prep
+So the per-cuisine finding is a **demonstration, not a measurement**: the prep
 times the marts recover are the ones the generator was given. What is not
 circular is the shape: a single threshold across populations with different
 floors is wrong at both ends, and a test asserts that ordering survives a change
