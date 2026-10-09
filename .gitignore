@@ -8,3 +8,4 @@ dbt_foodpulse/target/
 dbt_foodpulse/logs/
 airflow/.env
 .env
+airflow/logs/
