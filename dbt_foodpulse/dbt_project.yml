@@ -1,0 +1,28 @@
+name: foodpulse
+version: "1.0.0"
+config-version: 2
+profile: foodpulse
+
+model-paths: ["models"]
+test-paths: ["tests"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  foodpulse:
+    staging:
+      # Views: staging only casts and renames, so materialising it would store a
+      # second copy of the warehouse to save no computation.
+      +materialized: view
+    marts:
+      # Tables: these are what the dashboard reads, and a view would re-run the
+      # aggregate on every page load.
+      +materialized: table
+
+vars:
+  # An order over this is almost certainly paise in a rupees column rather than
+  # a real basket. Used to quarantine, never to silently clamp.
+  max_plausible_order: 12000
+  # Deliveries past this count as a breach. Business rule, so it lives in one
+  # place and not inside four models.
+  sla_minutes: 45

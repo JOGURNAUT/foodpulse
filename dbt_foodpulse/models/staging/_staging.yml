@@ -1,0 +1,68 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: Typed, deduplicated, and flagged. The only place "which orders count" is decided.
+    columns:
+      - name: order_id
+        description: Grain. One row per order after the export's overlapping pages are collapsed.
+        tests: [unique, not_null]
+      - name: user_id
+        tests:
+          - not_null
+          - relationships: {to: ref('stg_users'), field: user_id}
+      - name: is_valid
+        description: >
+          False when the row broke a stated rule -- negative duration, negative
+          amount, an amount past the plausible ceiling. The row stays; the marts
+          stop counting it.
+        tests: [not_null]
+      - name: total_amount
+        tests: [not_null]
+      - name: placed_at
+        tests: [not_null]
+
+  - name: stg_restaurants
+    columns:
+      - name: restaurant_id
+        tests: [unique, not_null]
+      - name: city
+        tests: [not_null]
+      - name: platform_rating
+        tests:
+          - dbt_utils.accepted_range: {min_value: 0, max_value: 5, inclusive: true}
+
+  - name: stg_users
+    columns:
+      - name: user_id
+        tests: [unique, not_null]
+
+  - name: stg_menu
+    columns:
+      - name: menu_item_id
+        tests: [unique, not_null]
+      - name: restaurant_id
+        tests:
+          - relationships: {to: ref('stg_restaurants'), field: restaurant_id}
+
+  - name: stg_order_items
+    columns:
+      - name: order_item_id
+        tests: [unique, not_null]
+      - name: order_id
+        tests:
+          - relationships: {to: ref('stg_orders'), field: order_id}
+      - name: quantity
+        tests:
+          - dbt_utils.accepted_range: {min_value: 1, inclusive: true}
+
+  - name: stg_reviews
+    columns:
+      - name: review_id
+        tests: [unique, not_null]
+      - name: rating
+        description: >
+          Nullable on purpose. A withheld rating is not missing data, and
+          filling it with a zero would drag every restaurant's score down.
+        tests:
+          - dbt_utils.accepted_range: {min_value: 1, max_value: 5, inclusive: true}
