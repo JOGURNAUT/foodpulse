@@ -37,11 +37,17 @@ What is mine, and what the walkthrough does not have:
 
 | | |
 |---|---|
-| **42 tests** | the original ships `tests/.gitkeep` and nothing in it |
+| **42 tests** | 22 schema, 6 singular, 14 pytest. The walkthrough has 16 schema tests and an empty `tests/` directory, so nothing singular |
 | **A local target** | DuckDB, so this runs from a clone with no account |
 | **A defect generator** | seeded, with six failure classes injected on purpose |
 | **A data-quality mart** | every excluded row counted under the rule that excluded it |
 | **A generated results page** | static, so it outlives the trial that produced it |
+
+**What this does not do, and the walkthrough does.** No S3 lake — the CSVs load
+straight in. No Airflow DAG. No incremental models: every mart is a full
+rebuild, where the original uses `materialized='incremental'` with a MERGE so a
+re-run touches only new rows. No AI layer and no Streamlit. It is also 40,000
+orders against the original's 10 million, which is a different problem.
 
 **What has run and what has not.** The DuckDB path runs end to end — that is
 where the numbers on the results page come from. The Snowflake SQL in
