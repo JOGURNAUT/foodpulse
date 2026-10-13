@@ -1,0 +1,22 @@
+# Points dbt at the RAW (Bronze) tables loaded by snowflake/05_copy_into.sql
+# (and re-loaded daily by Airflow's `reload_raw` task) -- dbt never creates
+# these tables itself, it just reads from them via source().
+sources:
+  - name: raw
+    database: ZOMATO
+    schema: RAW
+    tables:
+      - name: restaurants
+        description: "This table contains the raw data of restaurants from Zomato"
+      - name: users
+        description: "This table contains the raw data of users from Zomato"
+      - name: food
+        description: "This table contains the raw data of food items from Zomato"
+      - name: menu
+        description: "This table contains the raw data of menus from Zomato"
+      - name: orders
+        description: "This table contains the raw data of orders from Zomato"
+      - name: order_items
+        description: "This table contains the raw data of order items from Zomato"
+      - name: reviews
+        description: "This table contains the raw data of reviews from Zomato"

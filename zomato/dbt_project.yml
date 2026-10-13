@@ -1,0 +1,32 @@
+
+name: 'zomato'
+version: '1.0.0'
+
+# Looks up the matching `zomato:` entry in profiles.yml for the actual
+# Snowflake account/user/warehouse (those come from env vars, not this file).
+profile: 'zomato'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:         # directories to be removed by `dbt clean`
+  - "target"
+  - "dbt_packages"
+
+
+# Medallion defaults by folder: staging (Silver) builds as cheap views that
+# re-run live off RAW each query; marts (Gold) build as materialized tables
+# since dashboards and the AI layer query them repeatedly. Individual models
+# can still override this (fct_orders/fact_order_items set materialized=
+# 'incremental' themselves, for example) via `{{ config(...) }}`.
+models:
+  zomato:
+    staging : { +materialized: view, +schema: staging}
+    marts : { +materialized: table, +schema: marts}
+  snapshot:
+    zomato: { +materialized: table, +schema: marts}
+
