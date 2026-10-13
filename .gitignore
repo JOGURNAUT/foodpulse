@@ -1,0 +1,32 @@
+# Virtual environments
+.venv/
+venv/
+
+# Secrets (named exactly .env -- example.env templates are intentionally NOT ignored)
+Creds
+**/.env
+
+# Raw data (large files, not for version control)
+data/
+
+# Python
+__pycache__/
+*.pyc
+
+# dbt
+target/
+dbt_packages/
+dbt_internal_packages/
+
+# Logs
+logs/
+
+# Generated AI cache artifacts
+*.parquet
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Private reference material -- never goes to GitHub
+docs/transcript.txt
