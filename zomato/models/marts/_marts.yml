@@ -1,0 +1,15 @@
+# Data-quality tests on the marts layer, run by `dbt build` after the models
+# that need them. Together with _staging.yml's tests, these are what "dbt
+# build and tests passed" actually means for this project.
+version: 2
+models:
+  - name: fct_orders
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: customer_id
+        tests:
+          - relationships: { arguments: { to: ref('dim_customer'), field: customer_id } }   # referential integrity
+      - name: order_status
+        tests:
+          - accepted_values: { arguments: { values: ['Delivered','Cancelled','Refunded'] } }

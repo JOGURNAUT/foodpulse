@@ -1,0 +1,18 @@
+# Committed on purpose -- no secret ever lives in this file. Credentials come
+# from env_var(), which reads them from the SNOWFLAKE_* environment variables
+# set by .env (local runs) or docker-compose (Airflow). This file just says
+# *which* env vars to look up and the fixed, non-secret connection details
+# (role/database/warehouse/schema).
+zomato:
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: DBT_ROLE
+      database: ZOMATO
+      warehouse: ZOMATO_WH
+      schema: STAGING
+      threads: 4
+  target: dev
